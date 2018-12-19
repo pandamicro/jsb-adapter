@@ -39,7 +39,6 @@ cc.js.mixin(renderer.NodeProxy.prototype, {
             owner._proxy = this;
             this.updateZOrder();
             this.updateGroupIndex();
-            this.updateJSTRS(owner._trs);
             if (owner._parent && owner._parent._proxy) {
                 this.updateParent(owner._parent._proxy);
             }

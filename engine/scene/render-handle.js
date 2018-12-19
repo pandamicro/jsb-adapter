@@ -87,17 +87,21 @@ cc.js.mixin(renderer.RenderHandle.prototype, {
 
     updateEnabled (enabled) {
         if (enabled) {
-            this.enable();
-            let node = this._comp.node;
-            if (node) {
-                node._proxy.addHandle("render", this);
+            if (!this._enabled) {
+                this._enabled = true;
+                let node = this._comp.node;
+                if (node) {
+                    node._proxy.addHandle(this);
+                }
             }
         }
         else {
-            this.disable();
-            let node = this._comp.node;
-            if (node) {
-                node._proxy.removeHandle("render");
+            if (this._enabled) {
+                this._enabled = false;
+                let node = this._comp.node;
+                if (node) {
+                    node._proxy.removeHandle(this);
+                }
             }
         }
     },

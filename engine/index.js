@@ -43,6 +43,7 @@ require('jsb-adapter/engine/jsb-cocosanalytics.js');
 require('jsb-adapter/engine/jsb-assets-manager.js');
 
 if (CC_JSB && CC_NATIVERENDERER) {
+    require('jsb-adapter/engine/scene/camera.js');
     require('jsb-adapter/engine/scene/node-proxy.js');
     require('jsb-adapter/engine/scene/render-flow.js');
     // must be required after render flow
