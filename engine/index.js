@@ -63,6 +63,9 @@ if (CC_JSB && CC_NATIVERENDERER) {
         require('jsb-adapter/engine/assemblers/sprite/index.js');
         require('jsb-adapter/engine/assemblers/sprite/simple.js');
         require('jsb-adapter/engine/assemblers/sprite/sliced.js');
+        require('jsb-adapter/engine/assemblers/sprite/tiled.js');
+        require('jsb-adapter/engine/assemblers/sprite/bar-filled.js');
+        require('jsb-adapter/engine/assemblers/sprite/radial-filled.js');
         require('jsb-adapter/engine/assemblers/label/index.js');
         require('jsb-adapter/engine/assemblers/label/ttf.js');
         require('jsb-adapter/engine/assemblers/label/bmfont.js');
