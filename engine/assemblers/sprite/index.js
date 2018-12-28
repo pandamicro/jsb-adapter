@@ -53,5 +53,7 @@ cc.Sprite._assembler = {
     // Skip invalid sprites (without own _assembler)
     updateRenderData (sprite) {
         return sprite.__allocedDatas;
-    }
+    },
+
+    updateColor () {}
 };

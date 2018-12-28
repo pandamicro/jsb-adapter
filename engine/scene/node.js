@@ -48,7 +48,11 @@ cc.js.getset(cc.Node.prototype, "_renderFlag", function () {
         }
     }
     if (flag & COLOR) {
-        // this._proxy && this._proxy.updateColor();
+        // Update uniform
         comp && comp._updateColor();
+        if (assembler) {
+            // Update vertex
+            assembler.updateColor(comp, this._color._val);
+        }
     }
 });

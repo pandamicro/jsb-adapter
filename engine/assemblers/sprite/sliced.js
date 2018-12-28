@@ -75,6 +75,17 @@ cc.Sprite._assembler.sliced = {
             sprite._vertsDirty = false;
         }
     },
+
+    updateColor (sprite, color) {
+        let uintVerts = sprite._renderHandle.uintVDatas[0];
+        if (uintVerts) {
+            color = ((uintVerts[4] & 0xff000000) >>> 0 | (color & 0x00ffffff)) >>> 0;
+            let length = uintVerts.length;
+            for (let offset = 4; offset < length; offset += 5) {
+                uintVerts[offset] = color;
+            }
+        }
+    },
     
     updateVerts (sprite) {
         let renderHandle = sprite._renderHandle,
@@ -109,6 +120,7 @@ cc.Sprite._assembler.sliced = {
         temp[3].x = width - appx;
         temp[3].y = height - appy;
 
+        color = ((uintVerts[4] & 0xff000000) | (color & 0x00ffffff) >>> 0) >>> 0;
         let uvSliced = sprite.spriteFrame.uvSliced;
         for (let row = 0; row < 4; ++row) {
             let rowD = temp[row];

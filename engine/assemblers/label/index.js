@@ -36,5 +36,7 @@ cc.Label._assembler = {
     // Skip invalid labels (without own _assembler)
     updateRenderData (label) {
         return label.__allocedDatas;
-    }
+    },
+
+    updateColor () {}
 };

@@ -83,6 +83,9 @@ cc.Label._assembler.bmfont = cc.js.addon({
             rectHeight = rect.height,
             color = comp.node._color._val;
 
+        // Keep alpha channel for cpp to update
+        color = ((uintVerts[4] & 0xff000000) | (color & 0x00ffffff) >>> 0) >>> 0;
+
         let l, b, r, t;
         if (!rotated) {
             l = (rect.x) / texw;
@@ -128,5 +131,18 @@ cc.Label._assembler.bmfont = cc.js.addon({
         uintVerts[_dataOffset+19] = color;
 
         _dataOffset += 20;
+    },
+
+    updateColor (label, color) {
+        let uintVerts = label._renderHandle.uintVDatas[0];
+        if (uintVerts) {
+            // Keep alpha channel for cpp to update
+            color = ((uintVerts[4] & 0xff000000) >>> 0 | (color & 0x00ffffff)) >>> 0;
+
+            let length = uintVerts.length;
+            for (let offset = 4; offset < length; offset += 5) {
+                uintVerts[offset] = color;
+            }
+        }
     },
 }, cc.textUtils.bmfont);

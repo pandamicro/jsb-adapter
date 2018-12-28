@@ -63,6 +63,18 @@ cc.Sprite._assembler.simple = {
         }
     },
 
+    updateColor (sprite, color) {
+        let uintVerts = sprite._renderHandle.uintVDatas[0];
+        if (uintVerts) {
+            // Keep alpha channel for cpp to update
+            color = ((uintVerts[4] & 0xff000000) >>> 0 | (color & 0x00ffffff)) >>> 0;
+            uintVerts[4] = color;
+            uintVerts[9] = color;
+            uintVerts[14] = color;
+            uintVerts[19] = color;
+        }
+    },
+
     updateVerts (sprite) {
         let renderHandle = sprite._renderHandle,
             node = sprite.node,
@@ -93,6 +105,9 @@ cc.Sprite._assembler.simple = {
             r = cw + trimRight * scaleX - appx;
             t = ch + trimTop * scaleY - appy;
         }
+
+        // Keep alpha channel for cpp to update
+        color = ((uintVerts[4] & 0xff000000) | (color & 0x00ffffff) >>> 0) >>> 0;
 
         // get uv from sprite frame directly
         let uv = frame.uv;

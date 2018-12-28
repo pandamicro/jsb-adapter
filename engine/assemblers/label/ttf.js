@@ -56,6 +56,8 @@ cc.Label._assembler.ttf = cc.js.addon({
         return renderHandle;
     },
 
+    updateColor (label, color) {},
+
     _updateVerts (comp) {
         let renderHandle = comp._renderHandle;
         renderHandle.updateMaterial(0, comp.getMaterial());

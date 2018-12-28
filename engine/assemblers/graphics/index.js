@@ -598,5 +598,7 @@ cc.Graphics._assembler = {
         uintVData[dataOffset+2] = _curColor;
 
         _renderData.vertexStart ++;
-    }
+    },
+
+    updateColor () {}
 };

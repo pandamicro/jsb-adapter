@@ -64,4 +64,6 @@ cc.Mask._assembler = {
         mask._renderHandle.setMaskInverted(mask.inverted);
         mask._renderHandle.setUseModel(mask._type !== Mask.Type.IMAGE_STENCIL);
     },
+
+    updateColor () {}
 };
