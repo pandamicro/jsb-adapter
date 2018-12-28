@@ -191,4 +191,15 @@ cc.Sprite._assembler.barFilled = {
         // No render data needed for native
         return renderHandle;
     },
+
+    updateColor (sprite, color) {
+        let uintVerts = sprite._renderHandle.uintVDatas[0];
+        if (uintVerts) {
+            color = ((uintVerts[4] & 0xff000000) >>> 0 | (color & 0x00ffffff)) >>> 0;
+            let length = uintVerts.length;
+            for (let offset = 4; offset < length; offset += 5) {
+                uintVerts[offset] = color;
+            }
+        }
+    },
 };
