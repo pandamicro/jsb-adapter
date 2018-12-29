@@ -24,7 +24,6 @@
  ****************************************************************************/
 
 let _dataOffset = 0;
-let _lastCount = 0;
 
 cc.Label._assembler.bmfont = cc.js.addon({
     delayUpdateRenderData: true,
@@ -50,8 +49,8 @@ cc.Label._assembler.bmfont = cc.js.addon({
         }
 
         let buffer = renderHandle.flexBuffer.buffer;
-        if (needUpdateArray || _lastCount != count) {
-            _lastCount = count;
+        let vData = renderHandle.vDatas[0];
+        if (needUpdateArray || !vData || vData.length != count) {
             let vertices = new Float32Array(buffer, 0, vBytes / 4);
             let indices = new Uint16Array(buffer, vBytes, iBytes / 2);
             for (let i = 0, vid = 0; i < indices.length; i += 6, vid += 4) {

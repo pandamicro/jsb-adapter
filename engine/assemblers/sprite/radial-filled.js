@@ -32,7 +32,6 @@ let _intersectPoint_1 = [cc.v2(0, 0), cc.v2(0, 0), cc.v2(0, 0), cc.v2(0, 0)];
 let _intersectPoint_2 = [cc.v2(0, 0), cc.v2(0, 0), cc.v2(0, 0), cc.v2(0, 0)];
 let _center = cc.v2(0, 0);
 let _triangles = [];
-let _lastCount = 0;
 let _verts = [];
 function _calcInsectedPoints (left, right, bottom, top, center, angle, intersectPoints) {
     //left bottom, right, top
@@ -248,8 +247,8 @@ cc.Sprite._assembler.radialFilled = {
             this.updateVerts(fillStart, fillRange);
             this.fillVerts(sprite);
             sprite._vertsDirty = false;
-            _verts.length = 0;
         }
+        _verts.length = 0;
     },
 
     updateVerts (fillStart, fillRange) {
@@ -319,14 +318,21 @@ cc.Sprite._assembler.radialFilled = {
         // update data property
         let vBytes = count * 5 * 4;
         let iBytes = count * 2;
-        if (_lastCount != count) {
-            _lastCount = count;
-            let vertices = new Float32Array(vBytes);
-            let indices = new Uint16Array(iBytes);
-            for (let i = 0; i < count; i++) {
+        let needUpdateArray = false;
+        if (!renderHandle.flexBuffer) {
+            let bytes = 24 * (20 + 2);
+            renderHandle.flexBuffer = new cc.FlexBuffer(bytes);
+            needUpdateArray = true;
+        }
+
+        let buffer = renderHandle.flexBuffer.buffer;
+        let vData = renderHandle.vDatas[0];
+        if (needUpdateArray || !vData || vData.length != count) {
+            let vertices = new Float32Array(buffer, 0, vBytes / 4);
+            let indices = new Uint16Array(buffer, vBytes, iBytes / 2);
+            for (let i = 0; i < count; i ++) {
                 indices[i] = i;
             }
-
             renderHandle.updateMesh(0, vertices, indices);
         }
 
