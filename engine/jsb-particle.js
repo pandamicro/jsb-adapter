@@ -52,6 +52,18 @@
             var self = this.__particleSystem__;
             self.stopSystem();
         })
+
+        // init properties
+        for (var key in propertiesList) {
+            var propName = propertiesList[key];
+            this[propName] = this[propName];
+        }
+
+        var objPropList = ['gravity','sourcePos','posVar','startColor','startColorVar','endColor','endColorVar'];
+        for (var key in objPropList) {
+            var propName = objPropList[key];
+            this[propName] = this[propName];
+        }
     }
 
     Object.defineProperty(PSProto, 'gravity', {
@@ -197,6 +209,22 @@
         this._renderHandle = new middleware.MiddlewareRenderHandle();
         this._renderHandle.bind(this);
     };
+
+    var _onEnable = PSProto.onEnable;
+    PSProto.onEnable = function () {
+        _onEnable.call(this);
+        if (this._simulator) {
+            this._simulator.onEnable();
+        }
+    }
+
+    var _onDisable = PSProto.onDisable;
+    PSProto.onDisable = function () {
+        _onDisable.call(this);
+        if (this._simulator) {
+            this._simulator.onDisable();
+        }
+    }
 
     PSProto._onTextureLoaded = function () {
         this._texture = this._renderSpriteFrame.getTexture();
