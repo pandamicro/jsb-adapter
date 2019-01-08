@@ -23,54 +23,45 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-if (CC_RUNTIME) {
-    require('jsb-adapter/engine/rt-sys.js');
-    require('jsb-adapter/engine/rt_input.js');
-    require('jsb-adapter/engine/rt-loadSubpackage.js');
-    require('jsb-adapter/engine/rt-game.js');
-    require('jsb-adapter/engine/rt-jsb.js');
-} else {
-    require('jsb-adapter/engine/jsb-sys.js');
-    require('jsb-adapter/engine/jsb-game.js');
-    require('jsb-adapter/engine/jsb-videoplayer.js');
-    require('jsb-adapter/engine/jsb-webview.js');
-}
-require('jsb-adapter/engine/jsb-audio.js');
-require('jsb-adapter/engine/jsb-loader.js');
-require('jsb-adapter/engine/jsb-editbox.js');
-require('jsb-adapter/engine/jsb-reflection.js');
-require('jsb-adapter/engine/jsb-cocosanalytics.js');
-require('jsb-adapter/engine/jsb-assets-manager.js');
+require('./jsb-sys.js');
+require('./jsb-game.js');
+require('./jsb-videoplayer.js');
+require('./jsb-webview.js');
+require('./jsb-audio.js');
+require('./jsb-loader.js');
+require('./jsb-editbox.js');
+require('./jsb-reflection.js');
+require('./jsb-assets-manager.js');
 
 if (CC_JSB && CC_NATIVERENDERER) {
-    require('jsb-adapter/engine/scene/camera.js')
-    require('jsb-adapter/engine/scene/node-proxy.js');
-    require('jsb-adapter/engine/scene/render-flow.js');
+    require('./scene/camera.js')
+    require('./scene/node-proxy.js');
+    require('./scene/render-flow.js');
     // must be required after render flow
-    require('jsb-adapter/engine/scene/node.js');
-    require('jsb-adapter/engine/scene/render-handle.js');
+    require('./scene/node.js');
+    require('./scene/render-handle.js');
 
-    require('jsb-adapter/engine/scene/custom-render-handle.js');
-    require('jsb-adapter/engine/jsb-dragonbones.js');
-    require('jsb-adapter/engine/jsb-spine-skeleton.js');
-    require('jsb-adapter/engine/jsb-particle.js');
-    require('jsb-adapter/engine/scene/graphics-render-handle.js');
-    require('jsb-adapter/engine/scene/mask-render-handle.js');
+    require('./scene/custom-render-handle.js');
+    require('./jsb-dragonbones.js');
+    require('./jsb-spine-skeleton.js');
+    require('./jsb-particle.js');
+    require('./scene/graphics-render-handle.js');
+    require('./scene/mask-render-handle.js');
 
     cc.game.on(cc.game.EVENT_ENGINE_INITED, function () {
-        require('jsb-adapter/engine/assemblers/flex-buffer.js');
+        require('./assemblers/flex-buffer.js');
         // Assemblers
-        require('jsb-adapter/engine/assemblers/sprite/index.js');
-        require('jsb-adapter/engine/assemblers/sprite/simple.js');
-        require('jsb-adapter/engine/assemblers/sprite/sliced.js');
-        require('jsb-adapter/engine/assemblers/sprite/tiled.js');
-        require('jsb-adapter/engine/assemblers/sprite/bar-filled.js');
-        require('jsb-adapter/engine/assemblers/sprite/radial-filled.js');
-        require('jsb-adapter/engine/assemblers/label/index.js');
-        require('jsb-adapter/engine/assemblers/label/ttf.js');
-        require('jsb-adapter/engine/assemblers/label/bmfont.js');
-        require('jsb-adapter/engine/assemblers/graphics/impl.js');
-        require('jsb-adapter/engine/assemblers/graphics/index.js');
-        require('jsb-adapter/engine/assemblers/mask-assembler.js');
+        require('./assemblers/sprite/index.js');
+        require('./assemblers/sprite/simple.js');
+        require('./assemblers/sprite/sliced.js');
+        require('./assemblers/sprite/tiled.js');
+        require('./assemblers/sprite/bar-filled.js');
+        require('./assemblers/sprite/radial-filled.js');
+        require('./assemblers/label/index.js');
+        require('./assemblers/label/ttf.js');
+        require('./assemblers/label/bmfont.js');
+        require('./assemblers/graphics/impl.js');
+        require('./assemblers/graphics/index.js');
+        require('./assemblers/mask-assembler.js');
     });
 }

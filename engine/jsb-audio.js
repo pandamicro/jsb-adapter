@@ -31,10 +31,16 @@ cc.Audio = function (src) {
     this.id = -1;
 };
 
-if (CC_RUNTIME) {
-    var rt = loadRuntime();
-    jsb.AudioEngine = rt.AudioEngine;
-}
+let handleVolume  = function (volume) {
+    if (!volume) {
+        // set default volume as 1
+        volume = 1;
+    }
+    else if (typeof volume === 'string') {
+        volume = Number.parseFloat(volume);
+    }
+    return volume;
+};
 
 (function (proto, audioEngine) {
 
