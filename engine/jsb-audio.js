@@ -32,7 +32,7 @@ cc.Audio = function (src) {
 };
 
 let handleVolume  = function (volume) {
-    if (!volume) {
+    if (volume === undefined) {
         // set default volume as 1
         volume = 1;
     }
@@ -103,6 +103,7 @@ let handleVolume  = function (volume) {
     };
 
     proto.setVolume = function (volume) {
+        volume = handleVolume(volume);
         this.volume = volume;
         return audioEngine.setVolume(this.id, volume);
     };
@@ -203,7 +204,7 @@ let handleVolume  = function (volume) {
         return _music.volume;
     };
     audioEngine.setMusicVolume = function (volume) {
-        _music.volume = volume;
+        _music.volume = handleVolume(volume);
         audioEngine.setVolume(_music.id, _music.volume);
         return volume;
     };
@@ -214,7 +215,7 @@ let handleVolume  = function (volume) {
         return audioEngine.play(filePath, loop || false, _effect.volume);
     };
     audioEngine.setEffectsVolume = function (volume) {
-        _effect.volume = volume;
+        _effect.volume = handleVolume(volume);
     };
     audioEngine.getEffectsVolume = function () {
         return _effect.volume;

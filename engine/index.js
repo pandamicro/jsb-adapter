@@ -33,7 +33,7 @@ require('./jsb-editbox.js');
 require('./jsb-reflection.js');
 require('./jsb-assets-manager.js');
 
-if (CC_JSB && CC_NATIVERENDERER) {
+if (CC_NATIVERENDERER) {
     require('./scene/camera.js')
     require('./scene/node-proxy.js');
     require('./scene/render-flow.js');
@@ -64,4 +64,10 @@ if (CC_JSB && CC_NATIVERENDERER) {
         require('./assemblers/graphics/index.js');
         require('./assemblers/mask-assembler.js');
     });
+}
+else {
+    require('./absent/jsb-editor-support.js');
+    require('./absent/jsb-dragonbones.js');
+    require('./absent/jsb-spine-skeleton.js');
+    require('./absent/jsb-spine-assembler.js');
 }
