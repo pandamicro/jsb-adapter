@@ -60,8 +60,10 @@ if (CC_JSB && CC_NATIVERENDERER) {
         require('./assemblers/label/index.js');
         require('./assemblers/label/ttf.js');
         require('./assemblers/label/bmfont.js');
-        require('./assemblers/graphics/impl.js');
-        require('./assemblers/graphics/index.js');
-        require('./assemblers/mask-assembler.js');
+        if (cc.Graphics) {
+            require('./assemblers/graphics/impl.js');
+            require('./assemblers/graphics/index.js');
+            require('./assemblers/mask-assembler.js');
+        }
     });
 }
