@@ -32,6 +32,12 @@ cc.js.mixin(renderer.RenderHandle.prototype, {
         this.meshCount = 0;
         this._material = null;
         this._delayed = false;
+        this._comp = null;
+    },
+
+    destroy () {
+        RenderFlow.off(BEFORE_RENDER, this.updateRenderData, this);
+        this._comp = null;
     },
 
     bind (component) {

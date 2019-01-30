@@ -31,6 +31,10 @@ cc.js.mixin(renderer.GraphicsRenderHandle.prototype, {
         this.meshCount = 0;
         this._material = null;
         this._delayed = false;
+        this._comp = null;
+    },
+    destroy () {
+        this._comp = null;
     },
     bind (component) {
         if (this._comp !== component && component instanceof cc.RenderComponent) {
