@@ -34,6 +34,7 @@ cc.js.mixin(renderer.NodeProxy.prototype, {
         if (owner)
         {
             owner._proxy = this;
+            this.update3DNode();
             this.updateZOrder();
             this.updateCullingMask();
             this.updateJSTRS(owner._trs);
@@ -75,4 +76,8 @@ cc.js.mixin(renderer.NodeProxy.prototype, {
     updateOpacity () {
         this.setOpacity(this._owner.opacity);
     },
+
+    update3DNode () {
+        this.set3DNode(this._owner.is3DNode);
+    }
 });
