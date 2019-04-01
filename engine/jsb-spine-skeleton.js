@@ -23,31 +23,77 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-"use strict";
-
 (function(){
     if (window.sp === undefined || window.spine === undefined || window.middleware === undefined) return;
     
-    var RenderFlow = cc.RenderFlow;
-    var _slotColor = cc.color(0, 0, 255, 255);
-    var _boneColor = cc.color(255, 0, 0, 255);
-    var _originColor = cc.color(0, 255, 0, 255);
+    // spine global time scale
+    Object.defineProperty(sp, 'timeScale', {
+        get () {
+            return this._timeScale;
+        },
+        set (value) {
+            this._timeScale = value;
+            spine.SpineAnimation.setGlobalTimeScale(value);
+        },
+        configurable: true,
+    });
     
-    sp.ANIMATION_EVENT_TYPE = {
-        START: 0,
-        INTERRUPT: 1,
-        END: 2,
-        DISPOSE: 3,
-        COMPLETE: 4,
-        EVENT: 5
+    let RenderFlow = cc.RenderFlow;
+    let _slotColor = cc.color(0, 0, 255, 255);
+    let _boneColor = cc.color(255, 0, 0, 255);
+    let _originColor = cc.color(0, 255, 0, 255);
+    
+    let skeletonDataProto = sp.SkeletonData.prototype;
+    skeletonDataProto.destroy = function () {
+        this._jsbTextures = null;
+        spine.disposeSkeletonData(this._uuid);
+        cc.Asset.prototype.destroy.call(this);
     };
 
-    var animation = spine.SpineAnimation.prototype;
+    skeletonDataProto.init = function () {
+        if (this._inited) return;
+
+        let uuid = this._uuid;
+        if (!uuid) {
+            cc.errorID(7504);
+            return;
+        }
+        let atlasText = this.atlasText;
+        if (!atlasText) {
+            cc.errorID(7508, this.name);
+            return;
+        }
+        let texValues = this.textures;
+        let texKeys = this.textureNames;
+        if (!(texValues && texValues.length > 0 && texKeys && texKeys.length > 0)) {
+            cc.errorID(7507, this.name);
+            return;
+        }
+        let jsbTextures = this._jsbTextures = {};
+        for (let i = 0; i < texValues.length; ++i) {
+            let spTex = new middleware.Texture2D();
+            let ccTex = texValues[i];
+            spTex.setRealTextureIndex(i);
+            spTex.setPixelsWide(ccTex.width);
+            spTex.setPixelsHigh(ccTex.height);
+            spTex.setTexParamCallback(function(texIdx,minFilter,magFilter,wrapS,warpT){
+                texValues[texIdx].setFilters(minFilter, magFilter);
+                texValues[texIdx].setWrapMode(wrapS, warpT);
+            }.bind(this));
+            spTex.setNativeTexture(ccTex.getImpl());
+            jsbTextures[texKeys[i]] = spTex;
+        }
+        spine.initSkeletonData(uuid, this.skeletonJsonStr, atlasText, jsbTextures, this.scale);
+
+        this._inited = true;
+    };
+
+    let animation = spine.SpineAnimation.prototype;
     // The methods are added to be compatibility with old versions.
     animation.setCompleteListener = function (listener) {
         this._compeleteListener = listener;
         this.setCompleteListenerNative(function (trackEntry) {
-            var loopCount = Math.floor(trackEntry.trackTime / trackEntry.animationEnd);
+            let loopCount = Math.floor(trackEntry.trackTime / trackEntry.animationEnd);
             this._compeleteListener(trackEntry, loopCount);
         });
     };
@@ -59,43 +105,43 @@
 
         this.setStartListener(function (trackEntry) {
             if (this._target && this._callback) {
-                this._callback.call(this._target, this, trackEntry, sp.ANIMATION_EVENT_TYPE.START, null, 0);
+                this._callback.call(this._target, this, trackEntry, sp.AnimationEventType.START, null, 0);
             }
         });
 
         this.setInterruptListener(function (trackEntry) {
             if (this._target && this._callback) {
-                this._callback.call(this._target, this, trackEntry, sp.ANIMATION_EVENT_TYPE.INTERRUPT, null, 0);
+                this._callback.call(this._target, this, trackEntry, sp.AnimationEventType.INTERRUPT, null, 0);
             }
         });
 
         this.setEndListener(function (trackEntry) {
             if (this._target && this._callback) {
-                this._callback.call(this._target, this, trackEntry, sp.ANIMATION_EVENT_TYPE.END, null, 0);
+                this._callback.call(this._target, this, trackEntry, sp.AnimationEventType.END, null, 0);
             }
         });
 
         this.setDisposeListener(function (trackEntry) {
             if (this._target && this._callback) {
-                this._callback.call(this._target, this, trackEntry, sp.ANIMATION_EVENT_TYPE.DISPOSE, null, 0);
+                this._callback.call(this._target, this, trackEntry, sp.AnimationEventType.DISPOSE, null, 0);
             }
         });
 
         this.setCompleteListener(function (trackEntry, loopCount) {
             if (this._target && this._callback) {
-                this._callback.call(this._target, this, trackEntry, sp.ANIMATION_EVENT_TYPE.COMPLETE, null, loopCount);
+                this._callback.call(this._target, this, trackEntry, sp.AnimationEventType.COMPLETE, null, loopCount);
             }
         });
 
         this.setEventListener(function (trackEntry, event) {
             if (this._target && this._callback) {
-                this._callback.call(this._target, this, trackEntry, sp.ANIMATION_EVENT_TYPE.EVENT, event, 0);
+                this._callback.call(this._target, this, trackEntry, sp.AnimationEventType.EVENT, event, 0);
             }
         });
-    }
+    };
 
-    sp.Skeleton._assembler = undefined;
-    var skeleton = sp.Skeleton.prototype;
+    sp.Skeleton._assembler = null;
+    let skeleton = sp.Skeleton.prototype;
     Object.defineProperty(skeleton, 'paused', {
         get () {
             return this._paused || false;
@@ -114,7 +160,7 @@
         },
         set (value) {
             this._debugSlots = value;
-            this._initDebugDraw();
+            this._updateDebugDraw();
             if (this._skeleton) {
                 this._skeleton.setDebugSlotsEnabled(this._debugSlots);
             }
@@ -127,7 +173,7 @@
         },
         set (value) {
             this._debugBones = value;
-            this._initDebugDraw();
+            this._updateDebugDraw();
             if (this._skeleton) {
                 this._skeleton.setDebugBonesEnabled(this._debugBones);
             }
@@ -151,7 +197,8 @@
 
     Object.defineProperty(skeleton, "timeScale", {
         get () {
-            return this._timeScale || 1.0;
+            if (this._timeScale === undefined) return 1.0;
+            return this._timeScale;
         },
         set (value) {
             this._timeScale = value;
@@ -161,57 +208,59 @@
         }
     });
 
-    var _onLoad = skeleton.onLoad;
+    Object.defineProperty(skeleton, "useTint", {
+        get () {
+            return this._useTint || false;
+        },
+        set (value) {
+            this._useTint = value;
+            // Update cache material useTint property
+            let cache = this._materialCache;
+            for (let mKey in cache) {
+                let material = cache[mKey];
+                if (material) {
+                    material.useTint = this._useTint;
+                }
+            }
+            if (this._skeleton) {
+                this._skeleton.setUseTint(this._useTint);
+            }
+        }
+    });
+
+    let _onLoad = skeleton.onLoad;
     skeleton.onLoad = function () {
         if (_onLoad) {
             _onLoad.call(this);
         }
-    }
+    };
+
+    // Shield use batch in native
+    skeleton._updateBatch = function () {};
 
     skeleton.initNativeHandle = function () {
-        this._assembler = undefined;
+        this._assembler = null;
         this._renderHandle = new middleware.MiddlewareRenderHandle();
         this._renderHandle.bind(this);
-    },
+    };
 
-    skeleton.buildMaterial = function (tex) {
-
-        this._material = this._material || new SpriteMaterial();
-        this._materials = this._materials || {};
-        var baseMaterial = this._material;
-        var materials = this._materials;
-    
-        var baseKey = baseMaterial._hash;
-        var material = undefined;
-        if (!materials[baseKey]) {
-            material = baseMaterial;
-        } else {
-            material = baseMaterial.clone();
-        }
-
-        material.useModel = true;
-        material.texture = tex;
-        material.useColor = false;
-        material.updateHash();
-
-        materials[material._hash] = material;
-        return material;
-    }
+    let _updateMaterial = skeleton._updateMaterial;
+    skeleton._updateMaterial = function(material) {
+        _updateMaterial.call(this, material);
+        let nativeEffect = material.effect._nativeObj;
+        this._skeleton.setNativeEffect(nativeEffect);
+        this._renderHandle.clearNativeEffect();
+    };
 
     skeleton.setSkeletonData = function (skeletonData) {
         null != skeletonData.width && null != skeletonData.height && this.node.setContentSize(skeletonData.width, skeletonData.height);
 
-        var uuid = skeletonData._uuid;
+        let uuid = skeletonData._uuid;
         if (!uuid) {
             cc.errorID(7504);
             return;
         }
-        var jsonFile = cc.loader.md5Pipe ? cc.loader.md5Pipe.transformURL(skeletonData.nativeUrl, true) : skeletonData.nativeUrl;
-        var atlasText = skeletonData.atlasText;
-        if (!atlasText) {
-            cc.errorID(7508, skeletonData.name);
-            return;
-        }
+
         var texValues = skeletonData.textures;
         var texKeys = skeletonData.textureNames;
         if (!(texValues && texValues.length > 0 && texKeys && texKeys.length > 0)) {
@@ -219,41 +268,25 @@
             return;
         }
 
-        var textures = {};
-        for (var i = 0; i < texValues.length; ++i) {
-            var spTex = new middleware.Texture2D();
-            var ccTex = texValues[i];
-            spTex.setRealTextureIndex(i);
-            spTex.setPixelsWide(ccTex.width);
-            spTex.setPixelsHigh(ccTex.height);
-            spTex.setTexParamCallback(function(texIdx,minFilter,magFilter,wrapS,warpT){
-                texValues[texIdx].setFilters(minFilter, magFilter);
-                texValues[texIdx].setWrapMode(wrapS, warpT);
-            }.bind(this));
-
-            var material = this.buildMaterial(ccTex);
-            var nativeEffect = material.effect._nativeObj;
-            spTex.setNativeEffect(nativeEffect);
-            spTex.setNativeTexture(ccTex.getImpl());
-            textures[texKeys[i]] = spTex;
-        }
-
-        var skeletonAni = new spine.SpineAnimation();
+        let skeletonAni = new spine.SpineAnimation();
         try {
-            spine._initSkeletonRenderer(skeletonAni, jsonFile, atlasText, textures, skeletonData.scale);
+            spine.initSkeletonRenderer(skeletonAni, uuid);
         } catch (e) {
             cc._throw(e);
             return;
         }
         this._skeleton = skeletonAni;
-        this._skeletonTextures = textures;
         this._skeleton._comp = this;
         
         this._skeleton.setOpacityModifyRGB(this.premultipliedAlpha);
         this._skeleton.setDebugSlotsEnabled(this.debugSlots);
         this._skeleton.setDebugBonesEnabled(this.debugBones);
-
+        this._skeleton.setTimeScale(this.timeScale);
         this._skeleton.bindNodeProxy(this.node._proxy);
+
+        this._material.texture = texValues[0];
+        this._material.useModel = true;
+        this._updateMaterial(this._material);
 
         // init skeleton listener
         this._startListener && this.setStartListener(this._startListener);
@@ -262,15 +295,15 @@
         this._eventListener && this.setEventListener(this._eventListener);
         this._interruptListener && this.setInterruptListener(this._interruptListener);
         this._disposeListener && this.setDisposeListener(this._disposeListener);
-    }
+    };
 
     skeleton.setAnimationStateData = function (stateData) {
         if (this._skeleton) {
             return this._skeleton.setAnimationStateData(stateData);
         }
-    }
+    };
 
-    var _onEnable = skeleton.onEnable;
+    let _onEnable = skeleton.onEnable;
     skeleton.onEnable = function () {
         _onEnable.call(this);
         if (this._skeleton) {
@@ -279,21 +312,21 @@
         this.node._renderFlag &= ~RenderFlow.FLAG_UPDATE_RENDER_DATA;
         this.node._renderFlag &= ~RenderFlow.FLAG_RENDER;
         this.node._renderFlag &= ~RenderFlow.FLAG_CUSTOM_IA_RENDER;
-    }
+    };
 
-    var _onDisable = skeleton.onDisable;
+    let _onDisable = skeleton.onDisable;
     skeleton.onDisable = function () {
         _onDisable.call(this);
         if (this._skeleton) {
             this._skeleton.onDisable();
         }
-    }
+    };
 
     skeleton.update = function (dt) {
         if (this.paused) return;
-        var skeleton = this._skeleton;
+        let skeleton = this._skeleton;
         if (!skeleton) return;
-        var node = this.node;
+        let node = this.node;
         if (!node) return;
 
         if (this.__preColor__ === undefined || !node.color.equals(this.__preColor__)) {
@@ -302,21 +335,21 @@
         }
 
         if (this.debugBones || this.debugSlots) {
-            var debugData = this._debugData || this._skeleton.getDebugData();
+            let debugData = this._debugData || this._skeleton.getDebugData();
             if (!debugData) return;
 
-            var graphics = this._debugRenderer;
+            let graphics = this._debugRenderer;
             graphics.clear();
     
-            var debugIdx = 0;
+            let debugIdx = 0;
     
             if (this.debugSlots) {
                 // Debug Slot
                 graphics.strokeColor = _slotColor;
                 graphics.lineWidth = 5;
     
-                var debugSlotsLen = debugData[debugIdx++];
-                for(var i=0;i<debugSlotsLen;i+=8){
+                let debugSlotsLen = debugData[debugIdx++];
+                for(let i=0;i<debugSlotsLen;i+=8){
                     graphics.moveTo(debugData[debugIdx++], debugData[debugIdx++]);
                     graphics.lineTo(debugData[debugIdx++], debugData[debugIdx++]);
                     graphics.lineTo(debugData[debugIdx++], debugData[debugIdx++]);
@@ -332,12 +365,12 @@
                 graphics.strokeColor = _boneColor;
                 graphics.fillColor = _slotColor; // Root bone color is same as slot color.
     
-                var debugBonesLen = debugData[debugIdx++];
-                for (var i = 0; i < debugBonesLen; i += 4) {
-                    var bx = debugData[debugIdx++];
-                    var by = debugData[debugIdx++];
-                    var x = debugData[debugIdx++];
-                    var y = debugData[debugIdx++];
+                let debugBonesLen = debugData[debugIdx++];
+                for (let i = 0; i < debugBonesLen; i += 4) {
+                    let bx = debugData[debugIdx++];
+                    let by = debugData[debugIdx++];
+                    let x = debugData[debugIdx++];
+                    let y = debugData[debugIdx++];
     
                     // Bone lengths.
                     graphics.moveTo(bx, by);
@@ -357,61 +390,65 @@
 
     skeleton.updateWorldTransform = function () {
         this._skeleton && this._skeleton.updateWorldTransform();
-    }
+    };
 
     skeleton.setToSetupPose = function () {
         this._skeleton && this._skeleton.setToSetupPose();
-    }
+    };
 
     skeleton.setBonesToSetupPose = function () {
         this._skeleton && this._skeleton.setBonesToSetupPose();
-    }
+    };
 
     skeleton.setSlotsToSetupPose = function () {
         this._skeleton && this._skeleton.setSlotsToSetupPose();
-    }
+    };
+
+    skeleton.setSlotsRange = function (startSlotIndex, endSlotIndex) {
+        this._skeleton && this._skeleton.setSlotsRange(startSlotIndex, endSlotIndex);
+    };
 
     skeleton.findBone = function (boneName) {
         if (this._skeleton) return this._skeleton.findBone(boneName);
         return null;
-    }
+    };
 
     skeleton.findSlot = function (slotName) {
         if (this._skeleton) return this._skeleton.findSlot(slotName);
         return null;
-    }
+    };
 
     skeleton.setSkin = function (skinName) {
         if (this._skeleton) return this._skeleton.setSkin(skinName);
         return null;
-    }
+    };
 
     skeleton.getAttachment = function (slotName, attachmentName) {
         if (this._skeleton) return this._skeleton.getAttachment(slotName, attachmentName);
         return null;
-    }
+    };
 
     skeleton.setAttachment = function (slotName, attachmentName) {
         this._skeleton && this._skeleton.setAttachment(slotName, attachmentName);
-    }
+    };
 
     skeleton.getTextureAtlas = function (regionAttachment) {
         cc.warn("sp.Skeleton getTextureAtlas not support in native");
         return null;
-    }
+    };
 
     skeleton.setMix = function (fromAnimation, toAnimation, duration) {
         if (this._skeleton) {
             this._skeleton.setMix(fromAnimation, toAnimation, duration);
         }
-    }
+    };
 
     skeleton.setAnimation = function (trackIndex, name, loop) {
         if (this._skeleton) {
             return this._skeleton.setAnimation(trackIndex, name, loop);
         }
         return null;
-    }
+    };
 
     skeleton.addAnimation = function (trackIndex, name, loop, delay) {
         if (this._skeleton) {
@@ -419,138 +456,137 @@
             return this._skeleton.addAnimation(trackIndex, name, loop, delay);
         }
         return null;
-    }
+    };
 
     skeleton.findAnimation = function (name) {
         if (this._skeleton) return this._skeleton.findAnimation(name);
         return null;
-    }
+    };
 
     skeleton.getCurrent = function (trackIndex) {
         if (this._skeleton) {
             return this._skeleton.getCurrent(trackIndex);
         }
         return null;
-    }
+    };
 
     skeleton.clearTracks = function () {
         if (this._skeleton) {
             this._skeleton.clearTracks();
         }
-    }
+    };
 
     skeleton.clearTrack = function (trackIndex) {
         if (this._skeleton) {
             this._skeleton.clearTrack(trackIndex);
         }
-    }
+    };
 
     skeleton.setStartListener = function (listener) {
         this._startListener = listener;
         if (this._skeleton) {
             this._skeleton.setStartListener(listener);
         }
-    }
+    };
 
     skeleton.setInterruptListener = function (listener) {
         this._interruptListener = listener;
         if (this._skeleton) {
             this._skeleton.setInterruptListener(listener);
         }
-    }
+    };
 
     skeleton.setEndListener = function (listener) {
         this._endListener = listener;
         if (this._skeleton) {
             this._skeleton.setEndListener(listener);
         }
-    }
+    };
 
     skeleton.setDisposeListener = function (listener) {
         this._disposeListener = listener;
         if (this._skeleton) {
             this._skeleton.setDisposeListener(listener);
         }
-    }
+    };
 
     skeleton.setCompleteListener = function (listener) {
         this._completeListener = listener;
         if (this._skeleton) {
             this._skeleton.setCompleteListener(listener);
         }
-    }
+    };
 
     skeleton.setEventListener = function (listener) {
         this._eventListener = listener;
         if (this._skeleton) {
             this._skeleton.setEventListener(listener);
         }
-    }
+    };
 
     skeleton.setTrackStartListener = function (entry, listener) {
         if (this._skeleton) {
             this._skeleton.setTrackStartListener(entry, listener);
         }
-    }
+    };
 
     skeleton.setTrackInterruptListener = function (entry, listener) {
         if (this._skeleton) {
             this._skeleton.setTrackInterruptListener(entry, listener);
         }
-    }
+    };
 
     skeleton.setTrackEndListener = function (entry, listener) {
         if (this._skeleton) {
             this._skeleton.setTrackEndListener(entry, listener);
         }
-    }
+    };
 
     skeleton.setTrackDisposeListener = function (entry, listener) {
         if (this._skeleton) {
             this._skeleton.setTrackDisposeListener(entry, listener);
         }
-    }
+    };
 
     skeleton.setTrackCompleteListener = function (entry, listener) {
         if (this._skeleton) {
             this._skeleton.setTrackCompleteListener(entry, listener);
         }
-    }
+    };
 
     skeleton.setTrackEventListener = function (entry, listener) {
         if (this._skeleton) {
             this._skeleton.setTrackEventListener(entry, listener);
         }
-    }
+    };
 
     skeleton.getState = function () {
         if (this._skeleton) {
             return this._skeleton.getState();
         }
-    }
+    };
 
     skeleton._ensureListener = function () {
         cc.warn("sp.Skeleton _ensureListener not need in native");
-    }
+    };
 
     skeleton._updateSkeletonData = function () {
         if (this.skeletonData) {
+            this.skeletonData.init();
             this.setSkeletonData(this.skeletonData);
             this.defaultSkin && this._skeleton.setSkin(this.defaultSkin);
             this.animation = this.defaultAnimation;
         }
-    }
+    };
 
-    var _onDestroy = skeleton.onDestroy;
+    let _onDestroy = skeleton.onDestroy;
     skeleton.onDestroy = function(){
         _onDestroy.call(this);
-        this._skeletonTextures = undefined;
         if (this._skeleton) {
             this._skeleton.stopSchedule();
-            this._skeleton._comp = undefined;
-            this._skeleton = undefined;
+            this._skeleton._comp = null;
+            this._skeleton = null;
         }
-        this._materials = undefined;
-    }
+    };
 
 })();
